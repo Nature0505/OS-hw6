@@ -1,0 +1,74 @@
+import synch;
+
+def BLnew(M):
+    result = dict{ .bound: M, .counter: 0, .lock: Lock(), .condition: None};
+;
+
+def BLinit(bl):
+    bl->condition = Condition(?bl->lock);
+;
+
+def BLacquire(bl):
+
+    lock(?bl->lock);
+    while(bl->counter >= bl->bound):
+        wait(?bl->condition);
+    ;
+    bl->counter += 1;
+    unlock(?bl->lock);
+
+;
+
+def BLrelease(bl):
+    lock(?bl->lock);
+    bl->counter -= 1;
+    if(bl->counter < bl->bound):
+        notify(?bl->condition);
+    ;
+    unlock(?bl->lock);
+;
+
+#initial========================
+const BOUND = 2;
+const NPROC = 3;
+bl = BLnew(BOUND);
+BLinit(?bl);
+mylist = [0,] * NPROC;
+
+#test1==========================
+def process(self):
+    BLacquire(?bl);
+    mylist[self] = 1;
+    let total = sum(mylist): 
+        let success = total <= bl.bound:
+            assert success;
+        ;
+    ;
+    mylist[self] = 0;    
+    BLrelease(?bl);
+;
+
+for i in {1..NPROC}:
+    spawn process(i);
+;
+
+
+# #test2=========================
+# def process(self):
+#     BLacquire(?bl);
+#     mylist[self] = 1;
+#     let blocked =  True: 
+#         while blocked:
+#             let total = sum(mylist):
+#                 if total >= bl.bound:
+#                     blocked = False;    
+#                 ;
+#             ;
+#         ; 
+#     ;
+#     BLrelease(?bl);
+# ;
+
+# for i in {1..NPROC}:
+#     spawn process(i);
+# ;

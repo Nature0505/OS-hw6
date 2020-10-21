@@ -1,0 +1,76 @@
+import synch;
+
+const NSEATS = 3;
+
+lk = Lock();
+b_cond = Condition(?lk);
+c_cond = Condition(?lk);
+avaliable_seat = NSEATS;
+working_baber = 0;
+waiting_customer = bagEmpty();
+seated_customer = bagEmpty();
+
+def customer_wait(customer):
+    lock(?lk);
+    # while(True):
+    #     wait(?c_cond);
+    # ;
+    unlock(?lk);
+;
+
+def customer_enter(customer):
+    lock(?lk);
+    if(avaliable_seat <= 0):
+        result = False;
+    else:
+        avaliable_seat -= 1;
+        result = True;
+        bagAdd(?waiting_customer,customer);
+        notify(?b_cond);
+    ;
+    unlock(?lk);
+;
+
+def barber_sleep():
+    lock(?lk);
+    while((avaliable_seat + working_baber) == NSEATS):
+        wait(?b_cond);
+    ;
+    working_baber += 1;
+    result = bagChoose(waiting_customer);
+    bagRemove(?waiting_customer,result);
+    unlock(?lk);
+;
+
+def barber_finished(customer):
+    lock(?lk);
+    avaliable_seat += 1;
+    working_baber -= 1;
+    notify(?c_cond);
+    unlock(?lk);  
+;
+
+const NBARBERS = 2;
+const NCUSTOMERS = 2;
+
+def barber(self):
+    # wait for customer
+    let customer = barber_sleep():
+        # barber cuts customer's hair
+        barber_finished(customer);
+    ;
+;
+def customer(self ):
+    # rst check if a seat is available
+    if customer_enter(self ):
+        # customer waits for a barber to nish cutting hair
+        customer_wait(self );
+    ;
+;
+
+for i in {1..NBARBERS}:
+    spawn barber(i);
+;
+for i in {1..NCUSTOMERS}:
+    spawn customer(i);
+;

@@ -1,0 +1,75 @@
+import synch;
+
+mutex, sema = Semaphore(1), Semaphore(0);
+def BLnew(M):
+    result = dict{ .bound: M, .counter: 0, .waiting: 0};
+;
+
+def V_one(bl):
+    if(bl->waiting > 0):V(?sema);
+    else: V(?mutex);
+    ;
+;
+
+def BLacquire(bl):
+
+    P(?mutex);
+    if(bl->counter >= bl->bound):
+        bl->waiting += 1;
+        V(?mutex);P(?sema);
+        bl->waiting -= 1;
+    ;
+    bl->counter += 1;
+    V_one(bl);
+;
+
+def BLrelease(bl):
+    P(?mutex);
+    bl->counter -= 1;
+    V_one(bl);
+;
+
+
+# #initial========================
+# const BOUND = 2;
+# const NPROC = 3;
+# bl = BLnew(BOUND);
+# mylist = [0,] * NPROC;
+
+# # #test1==========================
+# # def process(self):
+# #     BLacquire(?bl);
+# #     mylist[self] = 1;
+# #     let total = sum(mylist): 
+# #         let success = total <= bl.bound:
+# #             assert success;
+# #         ;
+# #     ;
+# #     mylist[self] = 0;    
+# #     BLrelease(?bl);
+# # ;
+
+# # for i in {1..NPROC}:
+# #     spawn process(i);
+# # ;
+
+
+# #test2=========================
+# def process(self):
+#     BLacquire(?bl);
+#     mylist[self] = 1;
+#     let blocked =  True: 
+#         while blocked:
+#             let total = sum(mylist):
+#                 if total >= bl.bound:
+#                     blocked = False;    
+#                 ;
+#             ;
+#         ; 
+#     ;
+#     BLrelease(?bl);
+# ;
+
+# for i in {1..NPROC}:
+#     spawn process(i);
+# ;

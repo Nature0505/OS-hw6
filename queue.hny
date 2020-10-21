@@ -1,0 +1,82 @@
+import alloc;
+
+def Qnew():
+    result = dict{ .head: None, .tail: None, .lock: Lock() };
+;
+def Qenqueue(q, v):
+    let node = malloc(dict{ .value: v, .next: None }):
+        lock(?q->lock);
+        if q->head == None:
+            q->head = q->tail = node;
+        else:
+            q->tail->next = node;
+            q->tail = node;
+        ;
+        unlock(?q->lock);
+    ;
+;
+def Qdequeue(q):
+    lock(?q->lock);
+    let node = q->head:
+        if node == None:
+            result = ();
+        else:
+            result = (node->value,);
+            q->head = node->next;
+            free(node);
+        ;
+    ;
+    unlock(?q->lock);
+;
+
+def Qcontains(q ,v):
+    lock(?q->lock);
+    result = False;
+    let node,done = q->head,False:
+        while not done:
+            if node == None:
+                done = True;
+            else:
+                if node->value == v:
+                    result = True;
+                    done = True;
+                else:
+                    node = node->next;
+                ;
+            ;
+            
+        ;
+       
+    ;
+    unlock(?q->lock);
+;
+
+def Qremove(q, v):
+    lock(?q->lock);
+    let node, prev, done, temp = q->head, None, False, None:
+        while not done:
+            if node == None:
+                done = True;
+            else:
+                if node->value == v:
+                    if prev == None:
+                        q->head = node->next;
+                    else:
+                        prev->next = node->next;
+                    ;
+                    if node->next == None:
+                        q->tail = prev;
+                    ;
+                    temp = node;
+                    node = node->next;
+                    free(temp);
+                else:
+                    prev = node;
+                    node = node->next;
+                ;
+            ;
+        ;
+    ;
+    unlock(?q->lock);
+;
+
